@@ -7,6 +7,7 @@ from youtube_dl.utils import (
 )
 import youtube_dl.utils
 import re
+import hashlib
 
 class IdelloIE(InfoExtractor):
     IE_DESC = 'Idello.org'
@@ -14,6 +15,7 @@ class IdelloIE(InfoExtractor):
     _LOGIN_URL = 'https://www.idello.org/fr/api/v1/account/signin'
     # _VALID_URL = r'https://www.idello.org/fr/ressource'
     _VALID_URL = r'https?://.+?\.idello\.org/fr/ressource/(?P<name_or_id>.+)\?navcontext=(?P<video_id>.+)'
+    _NETRC_MACHINE = 'idello'
     # _VALID_URL = r'https?://.+?\.idello\.org/(?:[^/]+/)?(?P<type>videos|show_videos|articles|feature|(?:[^/]+/\d+/video))(/.+)?/(?P<name_or_id>.+)'
     #_VALID_URL = r'https?://medius.studios.ms/Embed/Video-nc/(?P<id>[A-Z0-9\-]+)'
 
@@ -33,14 +35,15 @@ class IdelloIE(InfoExtractor):
         'params': {
             # m3u8 download
             'skip_download': True,
+            'usenetrc': True,
         },
         'expected_warnings': ['HTTP Error 404: Not Found'],
     }
 
     def _login(self):
-        # username, password = self._get_login_info()
-        # username = ""
-        # password = ""
+        print("about to login")
+        username, password = self._get_login_info(netrc_machine=self._NETRC_MACHINE)
+        
         if username is None:
             if self._LOGIN_REQUIRED:
                 raise ExtractorError('No login info available, needed for using %s.' % self.IE_NAME, expected=True)
@@ -48,7 +51,7 @@ class IdelloIE(InfoExtractor):
 
         login_form_strs = {
             'username': username,
-            'password': password,
+            'password': hashlib.md5(password).hexdigest(),
             "sigin_under_13": "false",
             "remember": 0
         }
